@@ -7,8 +7,14 @@ let sheetsInstance: sheets_v4.Sheets | null = null;
 export async function getSheets(): Promise<sheets_v4.Sheets> {
   if (sheetsInstance) return sheetsInstance;
 
+  // On Render (or any server env), pass the JSON directly via GOOGLE_SERVICE_ACCOUNT_JSON
+  // Locally, fall back to the key file path
+  const credentials = config.google.serviceAccountJson
+    ? JSON.parse(config.google.serviceAccountJson)
+    : undefined;
+
   const auth = new google.auth.GoogleAuth({
-    keyFile: config.google.serviceAccountKeyFile,
+    ...(credentials ? { credentials } : { keyFile: config.google.serviceAccountKeyFile }),
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 

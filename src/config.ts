@@ -27,6 +27,7 @@ export const config = {
       'GOOGLE_SERVICE_ACCOUNT_KEY_FILE',
       './credentials/service-account.json'
     ),
+    serviceAccountJson: optionalEnv('GOOGLE_SERVICE_ACCOUNT_JSON'),
   },
 
   twilio: {
