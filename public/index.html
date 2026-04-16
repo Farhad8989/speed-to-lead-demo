@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpeedToLead — Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 40px; width: 100%; max-width: 480px; }
+    h1 { font-size: 1.6rem; color: #111; margin-bottom: 6px; }
+    p.sub { color: #666; font-size: 0.95rem; margin-bottom: 28px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 5px; }
+    input, select { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; margin-bottom: 18px; outline: none; transition: border 0.2s; }
+    input:focus, select:focus { border-color: #4f46e5; }
+    button { width: 100%; padding: 12px; background: #4f46e5; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #4338ca; }
+    button:disabled { background: #a5b4fc; cursor: not-allowed; }
+    .result { margin-top: 20px; padding: 14px 16px; border-radius: 8px; font-size: 0.9rem; display: none; }
+    .result.success { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
+    .result.error { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>⚡ SpeedToLead</h1>
+    <p class="sub">Submit your details and receive a WhatsApp message within seconds.</p>
+
+    <form id="leadForm">
+      <label for="name">Full Name</label>
+      <input type="text" id="name" placeholder="Jane Smith" required />
+
+      <label for="phone">WhatsApp Number</label>
+      <input type="tel" id="phone" placeholder="+601124249650" required />
+
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="jane@example.com" required />
+
+      <label for="serviceInterest">Service Interest</label>
+      <select id="serviceInterest" required>
+        <option value="">Select a service…</option>
+        <option>Web Development</option>
+        <option>Mobile App</option>
+        <option>Digital Marketing</option>
+        <option>SEO</option>
+        <option>Consulting</option>
+      </select>
+
+      <button type="submit" id="submitBtn">Get Contacted Now</button>
+    </form>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
