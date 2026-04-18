@@ -77,7 +77,8 @@ router.post('/meta', async (req: Request, res: Response) => {
 router.post('/twilio', async (req: Request, res: Response) => {
   const from: string = req.body?.From ?? '';
   const body: string = req.body?.Body ?? '';
-  const phone = from.replace(/^whatsapp:/i, '');
+  const rawPhone = from.replace(/^whatsapp:/i, '').trim();
+  const phone = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`;
 
   logger.info(`[TWILIO WEBHOOK] Inbound from ${phone}`, { body });
 
