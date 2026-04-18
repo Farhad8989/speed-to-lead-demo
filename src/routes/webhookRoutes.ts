@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { findLeadByPhone } from '../sheets/repositories/leadRepository';
-import { getConversationByLeadId, insertMessage } from '../sheets/repositories/conversationRepository';
+import { insertMessage } from '../sheets/repositories/conversationRepository';
 import { getMessagingProvider } from '../messaging/messagingFactory';
-import { getAIProvider } from '../ai/aiFactory';
+import { processReply, finalize } from '../services/qualificationService';
+import { routeLead } from '../services/routingService';
 import { ConversationRole } from '../types';
 import { config } from '../config';
 import { logger } from '../utils/logger';
-import { QUALIFICATION_SYSTEM_PROMPT } from '../ai/prompts';
 
 const router = Router();
 
@@ -31,17 +31,14 @@ router.post('/meta', async (req: Request, res: Response) => {
 
   try {
     const entry = req.body?.entry?.[0];
-    const changes = entry?.changes?.[0];
-    const value = changes?.value;
-    const messages = value?.messages;
-
+    const messages = entry?.changes?.[0]?.value?.messages;
     if (!messages?.length) return;
 
     for (const msg of messages) {
       const phone = `+${msg.from}`;
       const text: string = msg.text?.body ?? msg.type ?? '';
 
-      logger.info(`[META WEBHOOK] Inbound message from ${phone}`, { text });
+      logger.info(`[META WEBHOOK] Inbound from ${phone}`, { text });
 
       const lead = await findLeadByPhone(phone);
       if (!lead) {
@@ -49,41 +46,25 @@ router.post('/meta', async (req: Request, res: Response) => {
         continue;
       }
 
-      await insertMessage(lead.id, ConversationRole.USER, text, 'whatsapp');
+      const { replyText: aiReply, isComplete, qualificationResult } = await processReply(lead, text);
 
-      const history = await getConversationByLeadId(lead.id);
-      const chatMessages = [
-        {
-          role: 'system' as const,
-          content:
-            `${QUALIFICATION_SYSTEM_PROMPT}\n\n` +
-            `Lead name: ${lead.name}\n` +
-            `Service interest: ${lead.serviceInterest}\n` +
-            `Keep replies concise and friendly, under 150 words. ` +
-            `If the user picks a numbered option (1-3), acknowledge it and ask a relevant follow-up. ` +
-            `If they pick 4 or ask a free-form question, answer it helpfully as a sales expert for ${lead.serviceInterest}.`,
-        },
-        ...history.map(m => ({
-          role: m.role === ConversationRole.USER ? 'user' as const : 'assistant' as const,
-          content: m.content,
-        })),
-      ];
-
-      const ai = getAIProvider();
-      const aiReply = await ai.chat(chatMessages);
-
-      const replyText = aiReply.includes('###QUALIFICATION_COMPLETE###')
-        ? `Thanks ${lead.name}! Based on our chat, one of our specialists will be in touch with you shortly. 🚀`
-        : aiReply;
+      let finalReply: string;
+      if (isComplete && qualificationResult) {
+        const qualified = await finalize(lead, qualificationResult);
+        await routeLead(qualified);
+        finalReply = `Thanks ${lead.name}! Based on our chat, one of our specialists will be in touch with you shortly. 🚀`;
+      } else {
+        finalReply = aiReply;
+      }
 
       const whatsapp = getMessagingProvider('whatsapp');
-      const result = await whatsapp.send({ to: phone, message: replyText });
+      const result = await whatsapp.send({ to: phone, message: finalReply });
 
       if (result.success) {
-        await insertMessage(lead.id, ConversationRole.ASSISTANT, replyText, 'whatsapp');
-        logger.info(`[META WEBHOOK] AI reply sent to lead ${lead.id}`);
+        await insertMessage(lead.id, ConversationRole.ASSISTANT, finalReply, 'whatsapp');
+        logger.info(`[META WEBHOOK] Reply sent to lead ${lead.id}`);
       } else {
-        logger.warn(`[META WEBHOOK] Failed to send AI reply to lead ${lead.id}`);
+        logger.warn(`[META WEBHOOK] Failed to send reply to lead ${lead.id}`);
       }
     }
   } catch (err) {
@@ -94,11 +75,11 @@ router.post('/meta', async (req: Request, res: Response) => {
 // ── Twilio webhook ────────────────────────────────────────────────────────────
 
 router.post('/twilio', async (req: Request, res: Response) => {
-  const from: string = req.body?.From ?? '';   // e.g. "whatsapp:+601124249650"
+  const from: string = req.body?.From ?? '';
   const body: string = req.body?.Body ?? '';
   const phone = from.replace(/^whatsapp:/i, '');
 
-  logger.info(`[TWILIO WEBHOOK] Inbound WhatsApp from ${phone}`, { body });
+  logger.info(`[TWILIO WEBHOOK] Inbound from ${phone}`, { body });
 
   let replyText = '';
 
@@ -108,42 +89,25 @@ router.post('/twilio', async (req: Request, res: Response) => {
       if (!lead) {
         logger.warn(`[TWILIO WEBHOOK] No lead found for ${phone}`);
       } else {
-        await insertMessage(lead.id, ConversationRole.USER, body, 'whatsapp');
+        const { replyText: aiReply, isComplete, qualificationResult } = await processReply(lead, body);
 
-        const history = await getConversationByLeadId(lead.id);
-        const chatMessages = [
-          {
-            role: 'system' as const,
-            content:
-              `${QUALIFICATION_SYSTEM_PROMPT}\n\n` +
-              `Lead name: ${lead.name}\n` +
-              `Service interest: ${lead.serviceInterest}\n` +
-              `Keep replies concise and friendly, under 150 words. ` +
-              `If the user picks a numbered option (1-3), acknowledge it and ask a relevant follow-up. ` +
-              `If they pick 4 or ask a free-form question, answer it helpfully as a sales expert for ${lead.serviceInterest}.`,
-          },
-          ...history.map(m => ({
-            role: m.role === ConversationRole.USER ? 'user' as const : 'assistant' as const,
-            content: m.content,
-          })),
-        ];
-
-        const ai = getAIProvider();
-        const aiReply = await ai.chat(chatMessages);
-
-        replyText = aiReply.includes('###QUALIFICATION_COMPLETE###')
-          ? `Thanks ${lead.name}! Based on our chat, one of our specialists will be in touch with you shortly. 🚀`
-          : aiReply;
+        if (isComplete && qualificationResult) {
+          const qualified = await finalize(lead, qualificationResult);
+          await routeLead(qualified);
+          replyText = `Thanks ${lead.name}! Based on our chat, one of our specialists will be in touch with you shortly. 🚀`;
+        } else {
+          replyText = aiReply;
+        }
 
         await insertMessage(lead.id, ConversationRole.ASSISTANT, replyText, 'whatsapp');
-        logger.info(`[TWILIO WEBHOOK] AI reply stored for lead ${lead.id}`);
+        logger.info(`[TWILIO WEBHOOK] Reply stored for lead ${lead.id}`);
       }
     }
   } catch (err) {
     logger.error('[TWILIO WEBHOOK] Error processing inbound message', { error: err });
   }
 
-  // Respond with TwiML — Twilio delivers this as the WhatsApp reply
+  // TwiML — Twilio delivers this as the WhatsApp reply
   const safe = replyText
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

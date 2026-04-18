@@ -1,10 +1,18 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
+import { findLeadById } from '../sheets/repositories/leadRepository';
+import { generateTimeSlots } from '../services/bookingService';
 
-// Phase 4: booking slot generation
 const router = Router();
 
-router.get('/:leadId', (_req, res) => {
-  res.status(501).json({ error: 'Not implemented — coming in Phase 4' });
+router.get('/:leadId', async (req: Request, res: Response) => {
+  const lead = await findLeadById(req.params.leadId);
+  if (!lead) {
+    res.status(404).json({ error: 'Lead not found' });
+    return;
+  }
+
+  const slots = generateTimeSlots();
+  res.json({ leadId: lead.id, name: lead.name, slots });
 });
 
 export default router;
