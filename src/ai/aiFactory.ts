@@ -13,5 +13,5 @@ export function getAIProvider(): IAIProvider {
     case 'openrouter': instance = new OpenRouterProvider(); break;
     default:          instance = new MockAIProvider();
   }
-  return instance;
+  return instance!;
 }
