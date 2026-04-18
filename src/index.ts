@@ -30,6 +30,7 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
     aiProvider: config.ai.provider,
+    aiProviderRaw: process.env.AI_PROVIDER ?? '(not set)',
     aiModel: config.ai.provider === 'gemini' ? config.ai.geminiModel : config.ai.openRouterModel,
   });
 });
