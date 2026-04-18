@@ -29,7 +29,22 @@ app.get('/health', (_req, res) => {
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
+    aiProvider: config.ai.provider,
+    aiModel: config.ai.provider === 'gemini' ? config.ai.geminiModel : config.ai.openRouterModel,
   });
+});
+
+app.get('/api/debug/ai', async (_req, res) => {
+  try {
+    const { getAIProvider } = await import('./ai/aiFactory');
+    const ai = getAIProvider();
+    const result = await ai.chat([
+      { role: 'user', content: 'Say hello in one word' },
+    ]);
+    res.json({ ok: true, provider: ai.name, response: result });
+  } catch (err: unknown) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
+  }
 });
 
 app.use('/api/leads', leadRoutes);

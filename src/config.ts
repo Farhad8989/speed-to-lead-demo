@@ -16,7 +16,9 @@ export const config = {
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
 
   ai: {
-    provider: optionalEnv('AI_PROVIDER', 'openrouter') as 'openrouter' | 'mock',
+    provider: optionalEnv('AI_PROVIDER', 'openrouter') as 'gemini' | 'openrouter' | 'mock',
+    geminiApiKey: optionalEnv('GEMINI_API_KEY'),
+    geminiModel: optionalEnv('GEMINI_MODEL', 'gemini-2.5-flash'),
     openRouterApiKey: optionalEnv('OPENROUTER_API_KEY'),
     openRouterModel: optionalEnv('OPENROUTER_MODEL', 'meta-llama/llama-3.3-70b-instruct:free'),
   },
