@@ -64,6 +64,17 @@ export async function updateRow(
   });
 }
 
+export async function clearTabData(tab: string): Promise<void> {
+  const sheets = await getSheets();
+  const rows = await getRows(tab);
+  if (rows.length <= 1) return; // only header or empty — nothing to clear
+
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId: config.google.sheetsId,
+    range: `${tab}!A2:Z`,
+  });
+}
+
 export async function deleteRow(tab: string, rowNumber: number): Promise<void> {
   const sheets = await getSheets();
 
