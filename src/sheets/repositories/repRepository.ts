@@ -6,7 +6,7 @@ const TAB = 'SalesReps';
 const HEADER_ROWS = 1;
 
 const DEMO_REPS = [
-  { name: 'Alice Johnson', email: 'alice@speedtolead.demo', phone: '+15550101', isActive: true, bookingLink: 'https://calendly.com/black4m/30min' },
+  { name: 'Alice Johnson', email: 'farhad.hossain1507@gmail.com', phone: '+15550101', isActive: true, bookingLink: 'https://calendly.com/black4m/30min' },
   { name: 'Bob Smith',     email: 'bob@speedtolead.demo',   phone: '+15550102', isActive: true, bookingLink: 'https://calendly.com/black4m/30min' },
   { name: 'Carol Davis',   email: 'carol@speedtolead.demo', phone: '+15550103', isActive: true, bookingLink: 'https://calendly.com/black4m/30min' },
 ];

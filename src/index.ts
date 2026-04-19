@@ -39,8 +39,10 @@ app.get('/health', (_req, res) => {
 app.post('/api/debug/reset', async (_req, res) => {
   try {
     const { clearTabData } = await import('./sheets/sheetsClient');
-    await Promise.all(['Leads', 'Conversations', 'FollowUps', 'Events'].map(clearTabData));
-    res.json({ ok: true, message: 'Leads, Conversations, FollowUps, Events cleared' });
+    await Promise.all(['Leads', 'Conversations', 'FollowUps', 'Events', 'SalesReps'].map(clearTabData));
+    const { seedDemoReps: reseed } = await import('./sheets/repositories/repRepository');
+    await reseed();
+    res.json({ ok: true, message: 'Leads, Conversations, FollowUps, Events, SalesReps cleared and reseeded' });
   } catch (err: unknown) {
     res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
   }
