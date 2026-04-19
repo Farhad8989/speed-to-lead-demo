@@ -102,7 +102,7 @@ router.post('/twilio', async (req: Request, res: Response) => {
         if (isComplete && qualificationResult) {
           const qualified = await finalize(lead, qualificationResult);
           await routeLead(qualified);
-          replyText = `Thanks ${lead.name}! Based on our chat, one of our specialists will be in touch with you shortly. 🚀`;
+          replyText = closingMessage(lead.name, qualified.score);
         } else {
           replyText = aiReply;
         }
