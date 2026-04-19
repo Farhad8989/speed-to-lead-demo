@@ -48,11 +48,9 @@ export const config = {
   },
 
   email: {
-    smtpHost: optionalEnv('SMTP_HOST', 'smtp.ethereal.email'),
-    smtpPort: parseInt(optionalEnv('SMTP_PORT', '587'), 10),
-    smtpUser: optionalEnv('SMTP_USER'),
-    smtpPass: optionalEnv('SMTP_PASS'),
-    from: optionalEnv('EMAIL_FROM', 'leads@speedtolead.demo'),
+    sendgridApiKey: optionalEnv('SENDGRID_API_KEY'),
+    from: optionalEnv('EMAIL_FROM', 'farhad.hossain1507@gmail.com'),
+    fromName: optionalEnv('EMAIL_FROM_NAME', 'LeadBot'),
   },
 
   messaging: {

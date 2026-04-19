@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cron from 'node-cron';
 import { config } from './config';
 import { logger } from './utils/logger';
 import { setupSheets } from './sheets/sheetsSetup';
@@ -70,6 +71,17 @@ async function start(): Promise<void> {
     logger.info('Initializing Google Sheets...');
     await setupSheets();
     await seedDemoReps();
+
+    // Run pending follow-ups every 5 minutes
+    cron.schedule('*/5 * * * *', async () => {
+      try {
+        const { executePendingFollowUps } = await import('./services/followUpService');
+        await executePendingFollowUps();
+      } catch (err) {
+        logger.error('[CRON] Follow-up job failed', { error: err });
+      }
+    });
+    logger.info('Follow-up cron job scheduled (every 5 min)');
 
     app.listen(config.port, () => {
       logger.info(`Server listening on port ${config.port} [${config.nodeEnv}]`);

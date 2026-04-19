@@ -13,7 +13,6 @@ async function assignRepRoundRobin(lead: Lead): Promise<Lead> {
     return lead;
   }
 
-  // Pick rep with lowest current lead count
   const rep = reps.reduce((min, r) => r.currentLeadCount < min.currentLeadCount ? r : min);
 
   const updated = await updateLead(lead.id, { assignedRepId: rep.id }) ?? lead;
@@ -22,12 +21,15 @@ async function assignRepRoundRobin(lead: Lead): Promise<Lead> {
   logger.info(`[ROUTING] Lead ${lead.id} assigned to rep ${rep.name} (${rep.id})`);
   await alertHotLead(updated, rep);
 
+  const bookingLine = rep.bookingLink
+    ? `\n\nBook your free 30-min discovery call here: ${rep.bookingLink}`
+    : '';
+
   const whatsapp = getMessagingProvider('whatsapp');
   await whatsapp.send({
     to: lead.phone,
     message:
-      `Great news, ${lead.name}! 🎉 You've been matched with ${rep.name}, one of our specialists. ` +
-      `They'll be in touch with you very soon. In the meantime, feel free to ask me anything!`,
+      `Great news, ${lead.name}! 🎉 You've been matched with ${rep.name}, one of our specialists.${bookingLine}`,
   });
 
   return updated;
@@ -41,12 +43,30 @@ export async function routeLead(lead: Lead): Promise<Lead> {
       return routed;
     }
 
-    case LeadScore.WARM:
-    case LeadScore.COLD: {
-      const status = lead.score === LeadScore.WARM ? LeadStatus.NURTURING : LeadStatus.NURTURING;
-      const updated = await updateLead(lead.id, { status }) ?? lead;
+    case LeadScore.WARM: {
+      const updated = await updateLead(lead.id, { status: LeadStatus.NURTURING }) ?? lead;
       await scheduleNurtureSequence(updated);
-      logger.info(`[ROUTING] ${lead.score} lead ${lead.id} — nurture sequence scheduled`);
+
+      // Send booking link from rep with lowest load
+      const reps = await getActiveReps();
+      if (reps.length) {
+        const rep = reps.reduce((min, r) => r.currentLeadCount < min.currentLeadCount ? r : min);
+        if (rep.bookingLink) {
+          const whatsapp = getMessagingProvider('whatsapp');
+          await whatsapp.send({
+            to: lead.phone,
+            message: `Hi ${lead.name}! Whenever you're ready, feel free to book a free discovery call with our team: ${rep.bookingLink} — no pressure at all. 😊`,
+          });
+        }
+      }
+
+      logger.info(`[ROUTING] WARM lead ${lead.id} — nurture sequence scheduled, booking link sent`);
+      return updated;
+    }
+
+    case LeadScore.COLD: {
+      const updated = await updateLead(lead.id, { status: LeadStatus.LOST }) ?? lead;
+      logger.info(`[ROUTING] COLD lead ${lead.id} — marked LOST`);
       return updated;
     }
 

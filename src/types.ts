@@ -53,6 +53,7 @@ export interface SalesRep {
   phone: string;
   isActive: boolean;
   currentLeadCount: number;
+  bookingLink: string;
 }
 
 export interface FollowUp {

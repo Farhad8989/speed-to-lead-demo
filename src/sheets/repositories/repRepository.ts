@@ -6,9 +6,9 @@ const TAB = 'SalesReps';
 const HEADER_ROWS = 1;
 
 const DEMO_REPS = [
-  { name: 'Alice Johnson', email: 'alice@speedtolead.demo', phone: '+15550101', isActive: true },
-  { name: 'Bob Smith',     email: 'bob@speedtolead.demo',   phone: '+15550102', isActive: true },
-  { name: 'Carol Davis',   email: 'carol@speedtolead.demo', phone: '+15550103', isActive: true },
+  { name: 'Alice Johnson', email: 'alice@speedtolead.demo', phone: '+15550101', isActive: true, bookingLink: 'https://calendly.com/black4m/30min' },
+  { name: 'Bob Smith',     email: 'bob@speedtolead.demo',   phone: '+15550102', isActive: true, bookingLink: 'https://calendly.com/black4m/30min' },
+  { name: 'Carol Davis',   email: 'carol@speedtolead.demo', phone: '+15550103', isActive: true, bookingLink: 'https://calendly.com/black4m/30min' },
 ];
 
 function rowToRep(row: string[]): SalesRep {
@@ -19,11 +19,12 @@ function rowToRep(row: string[]): SalesRep {
     phone: row[3] ?? '',
     isActive: row[4] === 'true',
     currentLeadCount: parseInt(row[5] ?? '0', 10) || 0,
+    bookingLink: row[6] ?? '',
   };
 }
 
 function repToRow(rep: SalesRep): (string | number | boolean)[] {
-  return [rep.id, rep.name, rep.email, rep.phone, rep.isActive, rep.currentLeadCount];
+  return [rep.id, rep.name, rep.email, rep.phone, rep.isActive, rep.currentLeadCount, rep.bookingLink];
 }
 
 export async function getAllReps(): Promise<SalesRep[]> {
@@ -52,6 +53,6 @@ export async function seedDemoReps(): Promise<void> {
   if (existing.length > 0) return;
 
   for (const rep of DEMO_REPS) {
-    await appendRow(TAB, [uuidv4(), rep.name, rep.email, rep.phone, rep.isActive, 0]);
+    await appendRow(TAB, [uuidv4(), rep.name, rep.email, rep.phone, rep.isActive, 0, rep.bookingLink]);
   }
 }
