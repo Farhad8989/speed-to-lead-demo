@@ -1,3 +1,4 @@
+console.log('[STARTUP] Process beginning, NODE_ENV=' + process.env.NODE_ENV + ' PORT=' + process.env.PORT + ' PID=' + process.pid);
 process.on('uncaughtException', (err) => {
   console.error('[FATAL] Uncaught exception:', err);
   process.exit(1);
@@ -102,8 +103,10 @@ async function start(): Promise<void> {
       logger.error('Server failed to bind', { code: err.code, port: config.port, error: err.message });
       process.exit(1);
     });
-  } catch (err) {
-    logger.error('Failed to start server', { error: err });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : '';
+    logger.error('Failed to start server', { message: msg, stack, raw: JSON.stringify(err) });
     process.exit(1);
   }
 }
