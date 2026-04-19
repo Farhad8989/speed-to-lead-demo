@@ -28,10 +28,15 @@ export class GeminiProvider implements IAIProvider {
     const systemMsg = messages.find(m => m.role === 'system');
     const turns = messages.filter(m => m.role !== 'system');
 
-    const contents = turns.map(m => ({
+    let contents = turns.map(m => ({
       role: m.role === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }],
     }));
+
+    // Gemini requires conversations to start with a user turn.
+    // The welcome message is stored as assistant — drop any leading model turns.
+    const firstUserIdx = contents.findIndex(c => c.role === 'user');
+    if (firstUserIdx > 0) contents = contents.slice(firstUserIdx);
 
     const response = await this.client.models.generateContent({
       model: config.ai.geminiModel,
