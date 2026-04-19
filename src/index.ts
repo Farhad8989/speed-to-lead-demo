@@ -85,9 +85,13 @@ async function start(): Promise<void> {
     });
     logger.info('Follow-up cron job scheduled (every 5 min)');
 
-    app.listen(config.port, () => {
+    const server = app.listen(config.port, () => {
       logger.info(`Server listening on port ${config.port} [${config.nodeEnv}]`);
       logger.info(`Health check: http://localhost:${config.port}/health`);
+    });
+    server.on('error', (err: NodeJS.ErrnoException) => {
+      logger.error('Server failed to bind', { code: err.code, port: config.port, error: err.message });
+      process.exit(1);
     });
   } catch (err) {
     logger.error('Failed to start server', { error: err });
