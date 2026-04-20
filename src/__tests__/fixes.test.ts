@@ -608,7 +608,9 @@ describe('Fix 4 — booking token uniqueness', () => {
     expect(storedA?.bookingToken).not.toBe(storedB?.bookingToken);
   }, 60_000);
 
-  // ── HTTP redirect endpoint tests ──────────────────────────────────────────
+  // ── HTTP booking endpoint tests ───────────────────────────────────────────
+  // Flow: GET /:token  → 200 landing page (token not yet consumed)
+  //       GET /:token/confirm → 200 Calendly embed page (token consumed here)
 
   it('GET /api/book/:token → 404 for unknown token', async () => {
     const app = makeTestApp();
@@ -616,9 +618,9 @@ describe('Fix 4 — booking token uniqueness', () => {
     expect(res.status).toBe(404);
   }, 60_000);
 
-  it('GET /api/book/:token → 302 redirect for valid unused token', async () => {
+  it('GET /api/book/:token → 200 landing page for valid unused token', async () => {
     const lead = await insertLead({
-      name: 'Fix4 Redirect Valid',
+      name: 'Fix4 Landing Valid',
       phone: `+1555FX4F${Date.now()}`.slice(0, 15),
       email: 'fix4f@test.demo',
       serviceInterest: 'seo',
@@ -626,10 +628,37 @@ describe('Fix 4 — booking token uniqueness', () => {
     });
     createdLeadIds.push(lead.id);
 
-    // Assign a rep so redirect has a Calendly destination
+    const reps = await getActiveReps();
+    const token = 'landing-token-' + Date.now();
+    await updateLead(lead.id, {
+      bookingToken: token,
+      bookingTokenUsed: false,
+      assignedRepId: reps[0].id,
+    });
+
+    const app = makeTestApp();
+    const res = await request(app).get(`/api/book/${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Book Now');
+    expect(res.text).toContain(`/api/book/${token}/confirm`);
+    // Calendly URL must NOT appear on the landing page
+    expect(res.text).not.toContain('calendly.com/');
+  }, 60_000);
+
+  it('GET /api/book/:token/confirm → 200 Calendly embed and consumes token', async () => {
+    const lead = await insertLead({
+      name: 'Fix4 Embed Valid',
+      phone: `+1555FX4E${Date.now()}`.slice(0, 15),
+      email: 'fix4e@test.demo',
+      serviceInterest: 'seo',
+      source: 'test',
+    });
+    createdLeadIds.push(lead.id);
+
     const reps = await getActiveReps();
     const rep = reps[0];
-    const token = 'redir-token-' + Date.now();
+    const token = 'embed-token-' + Date.now();
     await updateLead(lead.id, {
       bookingToken: token,
       bookingTokenUsed: false,
@@ -637,16 +666,16 @@ describe('Fix 4 — booking token uniqueness', () => {
     });
 
     const app = makeTestApp();
-    const res = await request(app)
-      .get(`/api/book/${token}`)
-      .redirects(0); // don't follow redirect
+    const res = await request(app).get(`/api/book/${token}/confirm`);
 
-    expect(res.status).toBe(302);
-    expect(res.headers.location).toBeTruthy();
-    expect(res.headers.location).toContain('calendly.com');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('calendly-inline-widget');
+    expect(res.text).toContain('widget.js');
+    // Calendly URL appears only in data-url attribute, not as a bare navigable link
+    expect(res.text).toContain('data-url=');
   }, 60_000);
 
-  it('GET /api/book/:token → 410 on second use', async () => {
+  it('GET /api/book/:token/confirm → 410 on second use', async () => {
     const lead = await insertLead({
       name: 'Fix4 Token Used',
       phone: `+1555FX4G${Date.now()}`.slice(0, 15),
@@ -666,16 +695,16 @@ describe('Fix 4 — booking token uniqueness', () => {
 
     const app = makeTestApp();
 
-    // First use → 302
-    const first = await request(app).get(`/api/book/${token}`).redirects(0);
-    expect(first.status).toBe(302);
+    // First confirm → 200 embed
+    const first = await request(app).get(`/api/book/${token}/confirm`);
+    expect(first.status).toBe(200);
 
-    // Token is now marked used in Sheets — second request → 410
-    const second = await request(app).get(`/api/book/${token}`).redirects(0);
+    // Token is now marked used — second confirm → 410
+    const second = await request(app).get(`/api/book/${token}/confirm`);
     expect(second.status).toBe(410);
   }, 30_000);
 
-  it('bookingTokenUsed is persisted in Sheets after redirect', async () => {
+  it('bookingTokenUsed is persisted in Sheets after confirm', async () => {
     const lead = await insertLead({
       name: 'Fix4 Persist Used',
       phone: `+1555FX4H${Date.now()}`.slice(0, 15),
@@ -694,7 +723,7 @@ describe('Fix 4 — booking token uniqueness', () => {
     });
 
     const app = makeTestApp();
-    await request(app).get(`/api/book/${token}`).redirects(0);
+    await request(app).get(`/api/book/${token}/confirm`);
 
     const stored = await findLeadById(lead.id);
     expect(stored?.bookingTokenUsed).toBe(true);
