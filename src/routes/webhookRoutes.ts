@@ -106,7 +106,7 @@ router.post('/twilio', async (req: Request, res: Response) => {
     }
   } catch (err) {
     logger.error('[TWILIO WEBHOOK] Error processing inbound message', { error: err });
-    replyText = '';
+    replyText = "Sorry, I'm having a brief technical issue. Please reply again in a moment and I'll pick right up where we left off! 🙏";
   }
 
   // TwiML — Twilio delivers this as the WhatsApp reply
