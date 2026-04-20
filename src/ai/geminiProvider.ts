@@ -3,6 +3,22 @@ import { IAIProvider } from './aiProvider';
 import { ChatMessage, AICompletionOptions } from '../types';
 import { config } from '../config';
 
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 2000): Promise<T> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const status = err?.status ?? err?.code;
+      if ((status === 503 || status === 429) && i < retries - 1) {
+        await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error('Unreachable');
+}
+
 export class GeminiProvider implements IAIProvider {
   readonly name = 'gemini';
   private client: GoogleGenAI;
@@ -12,19 +28,18 @@ export class GeminiProvider implements IAIProvider {
   }
 
   async complete(prompt: string, options?: AICompletionOptions): Promise<string> {
-    const response = await this.client.models.generateContent({
+    const response = await withRetry(() => this.client.models.generateContent({
       model: config.ai.geminiModel,
       contents: prompt,
       config: {
         temperature: options?.temperature ?? 0.7,
         maxOutputTokens: options?.maxTokens ?? 1024,
       },
-    });
+    }));
     return response.text ?? '';
   }
 
   async chat(messages: ChatMessage[], options?: AICompletionOptions): Promise<string> {
-    // Gemini uses a system instruction + conversation turns
     const systemMsg = messages.find(m => m.role === 'system');
     const turns = messages.filter(m => m.role !== 'system');
 
@@ -38,7 +53,7 @@ export class GeminiProvider implements IAIProvider {
     const firstUserIdx = contents.findIndex(c => c.role === 'user');
     if (firstUserIdx > 0) contents = contents.slice(firstUserIdx);
 
-    const response = await this.client.models.generateContent({
+    const response = await withRetry(() => this.client.models.generateContent({
       model: config.ai.geminiModel,
       contents,
       config: {
@@ -46,7 +61,7 @@ export class GeminiProvider implements IAIProvider {
         temperature: options?.temperature ?? 0.7,
         maxOutputTokens: options?.maxTokens ?? 1024,
       },
-    });
+    }));
 
     return response.text ?? '';
   }
