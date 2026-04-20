@@ -4,8 +4,8 @@ import { logger } from '../utils/logger';
 
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   if (!config.email.sendgridApiKey) {
-    logger.warn('[ALERT] SENDGRID_API_KEY not set — skipping email');
-    return;
+    logger.warn('[ALERT] SENDGRID_API_KEY not set — email skipped');
+    throw new Error('SENDGRID_API_KEY not set');
   }
 
   logger.info(`[ALERT] Sending email via SendGrid — from: ${config.email.from} to: ${to}, subject: ${subject}`);
