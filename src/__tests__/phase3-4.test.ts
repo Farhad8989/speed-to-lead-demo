@@ -205,6 +205,87 @@ describe('Phase 4 — routing (HOT lead → rep assignment)', () => {
   });
 });
 
+// ── Phase 4: COLD lead path ──────────────────────────────────────────────────
+
+describe('Phase 4 — routing (COLD lead → LOST)', () => {
+  it('COLD lead status is set to LOST and no follow-ups are scheduled', async () => {
+    const coldPhone = `+1555CLD${Date.now()}`.slice(0, 15);
+    const coldLead = await createLead({
+      name: 'Cold Prospect',
+      phone: coldPhone,
+      email: 'cold@test.demo',
+      serviceInterest: 'Web Development',
+      source: 'e2e-test',
+    });
+
+    const qualified = await finalize(coldLead, {
+      score: LeadScore.COLD,
+      reason: 'No budget, wrong fit',
+      budget: 'low',
+      serviceInterest: 'Web Development',
+    });
+
+    const { lead: routed, userMessage } = await routeLead(qualified);
+
+    expect(routed.status).toBe(LeadStatus.LOST);
+    expect(userMessage).toBeTruthy();
+    expect(userMessage).not.toContain('/api/book/');
+
+    const followUps = await getFollowUpsByLeadId(coldLead.id);
+    expect(followUps.length).toBe(0);
+
+    // Cleanup
+    const rows = await getRows('Leads');
+    const idx = rows.findIndex(r => r[0] === coldLead.id);
+    if (idx > 0) await deleteRow('Leads', idx + 1);
+
+    const convRows = await getRows('Conversations');
+    const convIdxs = convRows.map((r, i) => ({ r, i })).filter(({ r }) => r[1] === coldLead.id).map(({ i }) => i + 1).reverse();
+    for (const i of convIdxs) await deleteRow('Conversations', i);
+  }, 30_000);
+});
+
+// ── Phase 4: HOT lead booking token ──────────────────────────────────────────
+
+describe('Phase 4 — HOT lead booking token', () => {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  it('HOT lead has UUID bookingToken persisted in Sheets after routing', async () => {
+    const hotPhone = `+1555HBT${Date.now()}`.slice(0, 15);
+    const hotLead = await createLead({
+      name: 'Hot Booking Token',
+      phone: hotPhone,
+      email: 'hotbooking@test.demo',
+      serviceInterest: 'SEO Services',
+      source: 'e2e-test',
+    });
+
+    const qualified = await finalize(hotLead, {
+      score: LeadScore.HOT,
+      reason: 'Ready to sign',
+      budget: 'high',
+      serviceInterest: 'SEO Services',
+    });
+
+    const { userMessage } = await routeLead(qualified);
+
+    const stored = await findLeadById(hotLead.id);
+    expect(stored?.bookingToken).toBeTruthy();
+    expect(stored?.bookingToken).toMatch(UUID_RE);
+    expect(stored?.bookingTokenUsed).toBe(false);
+    expect(userMessage).toContain('/api/book/');
+
+    // Cleanup
+    const rows = await getRows('Leads');
+    const idx = rows.findIndex(r => r[0] === hotLead.id);
+    if (idx > 0) await deleteRow('Leads', idx + 1);
+
+    const convRows = await getRows('Conversations');
+    const convIdxs = convRows.map((r, i) => ({ r, i })).filter(({ r }) => r[1] === hotLead.id).map(({ i }) => i + 1).reverse();
+    for (const i of convIdxs) await deleteRow('Conversations', i);
+  }, 60_000);
+});
+
 // ── Phase 4: booking ─────────────────────────────────────────────────────────
 
 describe('Phase 4 — booking slots', () => {

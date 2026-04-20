@@ -106,6 +106,16 @@ describe('leadRepository', () => {
     expect(leads.length).toBeGreaterThan(0);
     expect(leads.some(l => l.id === testLeadId)).toBe(true);
   });
+
+  it('findLeadById returns null for unknown ID', async () => {
+    const result = await findLeadById('nonexistent-id-00000000');
+    expect(result).toBeNull();
+  });
+
+  it('findLeadByPhone returns null for unknown phone', async () => {
+    const result = await findLeadByPhone('+19999999999');
+    expect(result).toBeNull();
+  });
 });
 
 // --- Conversation repository ---
@@ -129,6 +139,13 @@ describe('repRepository', () => {
     const reps = await getAllReps();
     expect(reps.length).toBeGreaterThan(0);
     expect(reps[0].name).toBeTruthy();
+  });
+
+  it('seedDemoReps is idempotent — calling twice does not duplicate reps', async () => {
+    const before = await getAllReps();
+    await seedDemoReps(); // second call — should be a no-op
+    const after = await getAllReps();
+    expect(after.length).toBe(before.length);
   });
 });
 
@@ -154,6 +171,12 @@ describe('followUpRepository', () => {
     const pending = await getPendingFollowUps();
     expect(pending.some(f => f.id === followUpId)).toBe(false);
   });
+
+  it('getFollowUpsByLeadId returns only that lead\'s follow-ups', async () => {
+    const { getFollowUpsByLeadId } = await import('../sheets/repositories/followUpRepository');
+    const myFollowUps = await getFollowUpsByLeadId(testLeadId);
+    expect(myFollowUps.every(f => f.leadId === testLeadId)).toBe(true);
+  });
 });
 
 // --- Cleanup test rows ---
@@ -169,6 +192,15 @@ afterAll(async () => {
     .map((r, i) => ({ r, i }))
     .filter(({ r }) => r[1] === testLeadId)
     .map(({ i }) => i + 1)
-    .reverse(); // delete from bottom to preserve row numbers
+    .reverse();
   for (const idx of convIndices) await deleteRow('Conversations', idx);
+
+  // Remove test follow-up rows
+  const fuRows = await getRows('FollowUps');
+  const fuIndices = fuRows
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => r[1] === testLeadId)
+    .map(({ i }) => i + 1)
+    .reverse();
+  for (const idx of fuIndices) await deleteRow('FollowUps', idx);
 });

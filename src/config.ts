@@ -61,4 +61,8 @@ export const config = {
   alerts: {
     webhookUrl: optionalEnv('ALERT_WEBHOOK_URL'),
   },
+
+  app: {
+    baseUrl: optionalEnv('APP_BASE_URL', 'https://speed-to-lead-demo.onrender.com'),
+  },
 } as const;

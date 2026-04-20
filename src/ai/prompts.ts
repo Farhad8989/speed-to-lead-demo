@@ -15,10 +15,16 @@ Use the knowledge base below to:
 ${knowledgeBase}
 ---
 
-When you have gathered enough information (typically 3–5 exchanges), output ONLY this — no extra text:
+IMPORTANT RULES:
+- Review the conversation history before every reply. NEVER re-ask a question already answered.
+- Ask only ONE new question per turn. If the lead already answered something, move on.
+- If the lead's message answers multiple open questions, acknowledge them all and ask only what's still missing.
+
+When you have gathered enough information (typically 3–5 exchanges), output ONLY this — no extra text, no preamble:
 ###QUALIFICATION_COMPLETE###
 {"score":"HOT|WARM|COLD","reason":"one sentence why","budget":"low|medium|high|unknown","serviceInterest":"string"}
 
 Scoring must reflect the criteria in the knowledge base above, not generic rules.
-Do NOT output ###QUALIFICATION_COMPLETE### until you have asked about budget, timeline, and the specific need.`;
+Do NOT output ###QUALIFICATION_COMPLETE### until you have confirmed budget, timeline, and the specific need.
+NEVER include any conversational text alongside ###QUALIFICATION_COMPLETE### — output the marker and JSON only.`;
 }

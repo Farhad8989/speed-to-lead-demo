@@ -8,6 +8,8 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
     return;
   }
 
+  logger.info(`[ALERT] Sending email via SendGrid — from: ${config.email.from} to: ${to}, subject: ${subject}`);
+
   const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
     headers: {
@@ -23,16 +25,16 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`SendGrid error ${res.status}: ${err}`);
+    const body = await res.text();
+    throw new Error(`SendGrid ${res.status}: ${body}`);
   }
 }
 
 export async function alertHotLead(lead: Lead, rep: SalesRep): Promise<void> {
-  const subject = `🔥 HOT LEAD: ${lead.name} — ${lead.serviceInterest}`;
+  const subject = `HOT LEAD: ${lead.name} — ${lead.serviceInterest}`;
 
   const html = `
-    <h2>🔥 Hot Lead Assigned to You</h2>
+    <h2>Hot Lead Assigned to You</h2>
     <table style="border-collapse:collapse;width:100%">
       <tr><td style="padding:8px;font-weight:bold">Name</td><td style="padding:8px">${lead.name}</td></tr>
       <tr><td style="padding:8px;font-weight:bold">Phone</td><td style="padding:8px">${lead.phone}</td></tr>
@@ -49,22 +51,21 @@ export async function alertHotLead(lead: Lead, rep: SalesRep): Promise<void> {
 
   try {
     await sendEmail(rep.email, subject, html);
-    logger.info(`[ALERT] Email sent to ${rep.email}`);
+    logger.info(`[ALERT] Email sent successfully to ${rep.email}`);
   } catch (err) {
-    logger.error('[ALERT] Failed to send email', { error: err });
+    logger.error(`[ALERT] Failed to send email to ${rep.email}: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  // Also fire Slack webhook if configured
   if (config.alerts.webhookUrl) {
     try {
-      const text = `🔥 HOT LEAD: ${lead.name} (${lead.phone}) — ${lead.serviceInterest} — assigned to ${rep.name}`;
+      const text = `HOT LEAD: ${lead.name} (${lead.phone}) — ${lead.serviceInterest} — assigned to ${rep.name}`;
       await fetch(config.alerts.webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
       });
     } catch (err) {
-      logger.error('[ALERT] Failed to send Slack webhook', { error: err });
+      logger.error(`[ALERT] Failed to send Slack webhook: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 }

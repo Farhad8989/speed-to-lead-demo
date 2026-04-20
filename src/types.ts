@@ -35,6 +35,8 @@ export interface Lead {
   updatedAt: string;
   qualifiedAt: string;
   notes: string;
+  bookingToken: string;
+  bookingTokenUsed: boolean;
 }
 
 export interface Conversation {

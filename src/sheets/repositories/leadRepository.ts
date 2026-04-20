@@ -21,14 +21,17 @@ function rowToLead(row: string[]): Lead {
     updatedAt: row[11] ?? '',
     qualifiedAt: row[12] ?? '',
     notes: row[13] ?? '',
+    bookingToken: row[14] ?? '',
+    bookingTokenUsed: row[15] === 'true',
   };
 }
 
-function leadToRow(lead: Lead): (string | number)[] {
+function leadToRow(lead: Lead): (string | number | boolean)[] {
   return [
     lead.id, lead.name, lead.phone, lead.email, lead.serviceInterest,
     lead.score, lead.status, lead.assignedRepId, lead.source,
     lead.responseTimeMs, lead.createdAt, lead.updatedAt, lead.qualifiedAt, lead.notes,
+    lead.bookingToken, lead.bookingTokenUsed,
   ];
 }
 
@@ -49,6 +52,8 @@ export async function insertLead(input: CreateLeadInput): Promise<Lead> {
     updatedAt: now,
     qualifiedAt: '',
     notes: '',
+    bookingToken: '',
+    bookingTokenUsed: false,
   };
 
   await appendRow(TAB, leadToRow(lead));
@@ -89,6 +94,12 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<Le
   // +1 for 0→1-based index, +HEADER_ROWS to skip header
   await updateRow(TAB, rowIndex + 1 + HEADER_ROWS, leadToRow(updated));
   return updated;
+}
+
+export async function findLeadByBookingToken(token: string): Promise<Lead | null> {
+  const rows = await getRows(TAB);
+  const row = rows.slice(HEADER_ROWS).find(r => r[14] === token);
+  return row ? rowToLead(row) : null;
 }
 
 export async function getLeadRowNumber(id: string): Promise<number | null> {

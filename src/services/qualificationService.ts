@@ -61,10 +61,23 @@ export async function processReply(lead: Lead, userMessage: string): Promise<Pro
 
   if (aiReply.includes('###QUALIFICATION_COMPLETE###')) {
     const result = parseQualificationResult(aiReply);
+    // Strip the marker+JSON from the user-facing reply regardless of parse success
+    const cleanReply = aiReply.split('###QUALIFICATION_COMPLETE###')[0].trim();
+
     if (result) {
       logger.info(`[QUALIFICATION] Lead ${lead.id} qualified as ${result.score}`);
-      return { replyText: aiReply, isComplete: true, qualificationResult: result };
+      return { replyText: cleanReply, isComplete: true, qualificationResult: result };
     }
+
+    // Parse failed — log and fall back to WARM rather than sending raw JSON to the user
+    logger.warn(`[QUALIFICATION] Failed to parse qualification JSON for lead ${lead.id}`, { raw: aiReply });
+    const fallback: QualificationResult = {
+      score: LeadScore.WARM,
+      reason: 'Auto-qualified after conversation (JSON parse fallback)',
+      budget: 'unknown',
+      serviceInterest: lead.serviceInterest,
+    };
+    return { replyText: cleanReply, isComplete: true, qualificationResult: fallback };
   }
 
   return { replyText: aiReply, isComplete: false };

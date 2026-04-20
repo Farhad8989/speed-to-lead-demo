@@ -13,6 +13,7 @@ import leadRoutes from './routes/leadRoutes';
 import webhookRoutes from './routes/webhookRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import bookingRoutes from './routes/bookingRoutes';
+import bookTokenRoutes from './routes/bookTokenRoutes';
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.get('/api/debug/ai', async (_req, res) => {
   }
 });
 
+app.use('/api/book', bookTokenRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/analytics', analyticsRoutes);

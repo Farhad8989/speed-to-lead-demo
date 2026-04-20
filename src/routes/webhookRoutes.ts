@@ -4,18 +4,11 @@ import { insertMessage } from '../sheets/repositories/conversationRepository';
 import { getMessagingProvider } from '../messaging/messagingFactory';
 import { processReply, finalize } from '../services/qualificationService';
 import { routeLead } from '../services/routingService';
-import { ConversationRole, LeadScore } from '../types';
+import { ConversationRole } from '../types';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 
 const router = Router();
-
-function closingMessage(name: string, score: LeadScore): string {
-  if (score === LeadScore.COLD) {
-    return `Thanks for chatting, ${name}! Based on what you've shared, we may not be the best fit right now — but feel free to reach out anytime if your needs change. 😊`;
-  }
-  return `Thanks ${name}! Based on our chat, one of our specialists will be in touch with you shortly. 🚀`;
-}
 
 // ── Meta WhatsApp Cloud API webhook ──────────────────────────────────────────
 
@@ -58,8 +51,8 @@ router.post('/meta', async (req: Request, res: Response) => {
       let finalReply: string;
       if (isComplete && qualificationResult) {
         const qualified = await finalize(lead, qualificationResult);
-        await routeLead(qualified);
-        finalReply = closingMessage(lead.name, qualified.score);
+        const { userMessage } = await routeLead(qualified);
+        finalReply = userMessage;
       } else {
         finalReply = aiReply;
       }
@@ -101,8 +94,8 @@ router.post('/twilio', async (req: Request, res: Response) => {
 
         if (isComplete && qualificationResult) {
           const qualified = await finalize(lead, qualificationResult);
-          await routeLead(qualified);
-          replyText = closingMessage(lead.name, qualified.score);
+          const { userMessage } = await routeLead(qualified);
+          replyText = userMessage;
         } else {
           replyText = aiReply;
         }
