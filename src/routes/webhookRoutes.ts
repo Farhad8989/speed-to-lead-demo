@@ -4,6 +4,7 @@ import { insertMessage } from '../sheets/repositories/conversationRepository';
 import { getMessagingProvider } from '../messaging/messagingFactory';
 import { processReply, finalize } from '../services/qualificationService';
 import { routeLead } from '../services/routingService';
+import { twilioValidator } from '../middleware/twilioValidator';
 import { ConversationRole } from '../types';
 import { config } from '../config';
 import { logger } from '../utils/logger';
@@ -74,7 +75,7 @@ router.post('/meta', async (req: Request, res: Response) => {
 
 // ── Twilio webhook ────────────────────────────────────────────────────────────
 
-router.post('/twilio', async (req: Request, res: Response) => {
+router.post('/twilio', twilioValidator, async (req: Request, res: Response) => {
   const from: string = req.body?.From ?? '';
   const body: string = req.body?.Body ?? '';
   const rawPhone = from.replace(/^whatsapp:/i, '').trim();
