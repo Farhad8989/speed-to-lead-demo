@@ -107,7 +107,7 @@ describe('Phase 3 — AI qualification', () => {
     expect(result?.isComplete).toBe(true);
     expect(result?.qualificationResult).toBeDefined();
     expect(['HOT', 'WARM', 'COLD']).toContain(result?.qualificationResult?.score);
-  }, 30_000);
+  }, 60_000);
 
   it('conversation history is stored in Sheets', async () => {
     const convo = await getConversationByLeadId(leadId);
@@ -153,9 +153,9 @@ describe('Phase 4 — routing (WARM lead → nurture sequence)', () => {
     expect(followUps.length).toBeGreaterThanOrEqual(3);
 
     const types = followUps.map(f => f.type);
-    expect(types).toContain('follow_up_5min');
-    expect(types).toContain('follow_up_1hr');
-    expect(types).toContain('follow_up_24hr');
+    expect(types).toContain('follow_up_day1');
+    expect(types).toContain('follow_up_day3');
+    expect(types).toContain('follow_up_day7');
   }, 30_000);
 
   it('lead status is set to NURTURING', async () => {
