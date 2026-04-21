@@ -10,7 +10,7 @@ const TABS: Record<string, string[]> = {
   ],
   Conversations: ['id', 'leadId', 'role', 'content', 'channel', 'createdAt'],
   SalesReps: ['id', 'name', 'email', 'phone', 'isActive', 'currentLeadCount', 'bookingLink'],
-  FollowUps: ['id', 'leadId', 'type', 'scheduledAt', 'executedAt', 'channel', 'message'],
+  FollowUps: ['id', 'leadId', 'type', 'scheduledAt', 'executedAt', 'channel', 'message', 'leadPhone'],
   Events: ['id', 'leadId', 'eventType', 'metadata', 'createdAt'],
 };
 

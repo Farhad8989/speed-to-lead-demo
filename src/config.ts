@@ -65,4 +65,11 @@ export const config = {
   app: {
     baseUrl: optionalEnv('APP_BASE_URL', 'https://speed-to-lead-demo.onrender.com'),
   },
+
+  nurture: {
+    // Delays in milliseconds — override via env vars (values are in hours)
+    delay1Ms: parseInt(optionalEnv('NURTURE_DELAY_1_HOURS', '24'), 10) * 60 * 60 * 1000,
+    delay2Ms: parseInt(optionalEnv('NURTURE_DELAY_2_HOURS', '72'), 10) * 60 * 60 * 1000,
+    delay3Ms: parseInt(optionalEnv('NURTURE_DELAY_3_HOURS', '168'), 10) * 60 * 60 * 1000,
+  },
 } as const;

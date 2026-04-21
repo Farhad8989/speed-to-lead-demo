@@ -66,6 +66,7 @@ export interface FollowUp {
   executedAt: string;
   channel: string;
   message: string;
+  leadPhone: string;
 }
 
 export interface LeadEvent {

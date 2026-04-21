@@ -11,7 +11,7 @@ import { insertFollowUp, getPendingFollowUps, markFollowUpExecuted } from '../sh
 import { ConversationRole, LeadScore, LeadStatus } from '../types';
 import { deleteRow, getRows } from '../sheets/sheetsClient';
 
-const TEST_PHONE = `+1555TEST${Date.now()}`.slice(0, 15);
+const TEST_PHONE = `+155500${Date.now()}`;
 let testLeadId: string;
 
 // --- Sheets connection ---
@@ -155,7 +155,7 @@ describe('followUpRepository', () => {
 
   it('inserts a follow-up scheduled in the past', async () => {
     const pastDate = new Date(Date.now() - 60_000); // 1 min ago
-    const fu = await insertFollowUp(testLeadId, 'nurture-1', pastDate, 'whatsapp', 'Just checking in!');
+    const fu = await insertFollowUp(testLeadId, 'nurture-1', pastDate, 'whatsapp', 'Just checking in!', '+10000000000');
     followUpId = fu.id;
     expect(fu.id).toBeTruthy();
     expect(fu.executedAt).toBe('');
@@ -181,10 +181,14 @@ describe('followUpRepository', () => {
 
 // --- Cleanup test rows ---
 afterAll(async () => {
-  // Remove test lead row
+  // Remove all lead rows matching TEST_PHONE (catches stale rows from interrupted prior runs)
   const rows = await getRows('Leads');
-  const rowIndex = rows.findIndex(r => r[0] === testLeadId);
-  if (rowIndex > 0) await deleteRow('Leads', rowIndex + 1);
+  const staleIndices = rows
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => r[2] === TEST_PHONE)
+    .map(({ i }) => i + 1)
+    .reverse();
+  for (const idx of staleIndices) await deleteRow('Leads', idx);
 
   // Remove test conversation rows
   const convRows = await getRows('Conversations');

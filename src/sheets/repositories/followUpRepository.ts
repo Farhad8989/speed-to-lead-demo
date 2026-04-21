@@ -14,11 +14,12 @@ function rowToFollowUp(row: string[]): FollowUp {
     executedAt: row[4] ?? '',
     channel: row[5] ?? '',
     message: row[6] ?? '',
+    leadPhone: row[7] ?? '',
   };
 }
 
 function followUpToRow(f: FollowUp): string[] {
-  return [f.id, f.leadId, f.type, f.scheduledAt, f.executedAt, f.channel, f.message];
+  return [f.id, f.leadId, f.type, f.scheduledAt, f.executedAt, f.channel, f.message, f.leadPhone];
 }
 
 export async function insertFollowUp(
@@ -26,7 +27,8 @@ export async function insertFollowUp(
   type: string,
   scheduledAt: Date,
   channel: string,
-  message: string
+  message: string,
+  leadPhone: string
 ): Promise<FollowUp> {
   const followUp: FollowUp = {
     id: uuidv4(),
@@ -36,6 +38,7 @@ export async function insertFollowUp(
     executedAt: '',
     channel,
     message,
+    leadPhone,
   };
 
   await appendRow(TAB, followUpToRow(followUp));
