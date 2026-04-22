@@ -58,24 +58,27 @@ export async function routeLead(lead: Lead): Promise<RouteLeadResult> {
     }
 
     case LeadScore.WARM: {
-      const updated = await updateLead(lead.id, { status: LeadStatus.NURTURING }) ?? lead;
-      await scheduleNurtureSequence(updated);
-
       const reps = await getActiveReps();
       const rep = reps.length
         ? reps.reduce((min, r) => r.currentLeadCount < min.currentLeadCount ? r : min)
         : null;
+
+      const updateFields: Partial<Lead> = { status: LeadStatus.NURTURING };
+      if (rep) updateFields.assignedRepId = rep.id;
+      const updated = await updateLead(lead.id, updateFields) ?? lead;
+      await scheduleNurtureSequence(updated);
+
       let bookingLine = '';
       if (rep?.bookingLink) {
         const token = await generateBookingToken(updated.id);
         const url = buildBookingUrl(updated, token);
-        bookingLine = ` ${url} —`;
+        bookingLine = `\n\nFeel free to book a free discovery call whenever you're ready: ${url}`;
       }
 
       logger.info(`[ROUTING] WARM lead ${lead.id} — nurture sequence scheduled`);
       return {
         lead: updated,
-        userMessage: `Hi ${lead.name}! Whenever you're ready, feel free to book a free discovery call:${bookingLine} no pressure at all. 😊`,
+        userMessage: `Hi ${lead.name}! No pressure at all. 😊${bookingLine}`,
       };
     }
 
