@@ -65,6 +65,7 @@ export const config = {
   app: {
     baseUrl: optionalEnv('APP_BASE_URL', 'https://speed-to-lead-demo.onrender.com'),
     debugSecret: optionalEnv('DEBUG_SECRET'),
+    apiKey: optionalEnv('API_KEY'),
   },
 
   nurture: {

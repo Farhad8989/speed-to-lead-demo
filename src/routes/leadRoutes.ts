@@ -1,9 +1,21 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { createLead } from '../services/leadService';
 import { getAllLeads, findLeadById } from '../sheets/repositories/leadRepository';
+import { config } from '../config';
 import { logger } from '../utils/logger';
 
 const router = Router();
+
+router.use((req: Request, res: Response, next: NextFunction) => {
+  const apiKey = config.app.apiKey;
+  if (!apiKey) return next();
+  const auth = req.headers.authorization ?? '';
+  if (auth !== `Bearer ${apiKey}`) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  next();
+});
 
 router.get('/', async (_req: Request, res: Response) => {
   try {
