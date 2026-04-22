@@ -18,7 +18,7 @@ import bookTokenRoutes from './routes/bookTokenRoutes';
 const app = express();
 
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
+app.use(cors({ origin: config.app.baseUrl }));
 app.use(rateLimit({ windowMs: 60_000, max: 100, standardHeaders: true, legacyHeaders: false }));
 app.use(express.json({
   verify: (req: any, _res, buf) => { req.rawBody = buf; },
