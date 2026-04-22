@@ -106,6 +106,14 @@ async function start(): Promise<void> {
       logger.error('Server failed to bind', { code: err.code, port: config.port, error: err.message });
       process.exit(1);
     });
+
+    process.on('SIGTERM', () => {
+      logger.info('[SHUTDOWN] SIGTERM received — closing server');
+      server.close(() => {
+        logger.info('[SHUTDOWN] All connections closed — exiting');
+        process.exit(0);
+      });
+    });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : '';
