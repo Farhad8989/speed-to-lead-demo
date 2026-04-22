@@ -52,7 +52,11 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const lead = await createLead({ name, phone, email, serviceInterest, source: source ?? 'web' });
     res.status(201).json({ lead });
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.code === 'DUPLICATE_PHONE') {
+      res.status(409).json({ error: 'A lead with this phone number already exists', lead: err.lead });
+      return;
+    }
     logger.error('POST /leads failed', { error: err });
     res.status(500).json({ error: 'Failed to create lead' });
   }

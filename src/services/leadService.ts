@@ -56,11 +56,13 @@ const WELCOME_MESSAGE = (name: string, service: string) => {
 export async function createLead(input: CreateLeadInput) {
   const start = Date.now();
 
-  // Deduplicate by phone
   const existing = await findLeadByPhone(input.phone);
   if (existing) {
     logger.info(`Lead already exists for phone ${input.phone}`, { leadId: existing.id });
-    return existing;
+    const err = new Error(`Lead already exists for phone ${input.phone}`) as Error & { code: string; lead: typeof existing };
+    err.code = 'DUPLICATE_PHONE';
+    err.lead = existing;
+    throw err;
   }
 
   const lead = await insertLead(input);
