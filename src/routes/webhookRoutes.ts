@@ -39,7 +39,9 @@ router.post('/meta', async (req: Request, res: Response) => {
 
     for (const msg of messages) {
       const phone = `+${msg.from}`;
-      const text: string = msg.text?.body ?? msg.type ?? '';
+      const rawText: string = msg.text?.body ?? msg.type ?? '';
+      if (rawText.length > 2000) logger.warn(`[META WEBHOOK] Message truncated from ${rawText.length} chars`);
+      const text = rawText.slice(0, 2000);
 
       logger.info(`[META WEBHOOK] Inbound from ${phone}`, { text });
 
@@ -84,7 +86,9 @@ router.post('/meta', async (req: Request, res: Response) => {
 
 router.post('/twilio', twilioValidator, twilioIdempotency, spamGuard, async (req: Request, res: Response) => {
   const from: string = req.body?.From ?? '';
-  const body: string = req.body?.Body ?? '';
+  const rawBody: string = req.body?.Body ?? '';
+  if (rawBody.length > 2000) logger.warn(`[TWILIO WEBHOOK] Message truncated from ${rawBody.length} chars`);
+  const body = rawBody.slice(0, 2000);
   const rawPhone = from.replace(/^whatsapp:/i, '').trim();
   const phone = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`;
 
