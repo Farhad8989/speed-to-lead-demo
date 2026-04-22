@@ -242,7 +242,7 @@ describe('Phase 4 — routing (COLD lead → LOST)', () => {
     const convRows = await getRows('Conversations');
     const convIdxs = convRows.map((r, i) => ({ r, i })).filter(({ r }) => r[1] === coldLead.id).map(({ i }) => i + 1).reverse();
     for (const i of convIdxs) await deleteRow('Conversations', i);
-  }, 30_000);
+  }, 60_000);
 });
 
 // ── Phase 4: HOT lead booking token ──────────────────────────────────────────

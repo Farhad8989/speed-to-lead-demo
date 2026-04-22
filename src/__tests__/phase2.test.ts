@@ -42,15 +42,14 @@ describe('leadService.createLead', () => {
     expect(convo[0].content).toContain('Phase2 Tester');
   });
 
-  it('deduplicates: re-submitting same phone returns existing lead', async () => {
-    const dup = await createLead({
+  it('deduplicates: re-submitting same phone throws DUPLICATE_PHONE', async () => {
+    await expect(createLead({
       name: 'Phase2 Tester',
       phone: TEST_PHONE,
       email: 'phase2@test.demo',
       serviceInterest: 'Web Development',
       source: 'test',
-    });
-    expect(dup.id).toBe(createdLeadId);
+    })).rejects.toMatchObject({ code: 'DUPLICATE_PHONE' });
   }, 15_000);
 });
 

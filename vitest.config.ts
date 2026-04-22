@@ -6,6 +6,7 @@ const FILE_ORDER = [
   'phase2.test.ts',
   'phase3-4.test.ts',
   'fixes.test.ts',
+  'guards.test.ts',
 ];
 
 function sortIndex(filePath: string): number {
@@ -21,6 +22,7 @@ export default defineConfig({
       'src/__tests__/phase2.test.ts',
       'src/__tests__/phase3-4.test.ts',
       'src/__tests__/fixes.test.ts',
+      'src/__tests__/guards.test.ts',
     ],
     fileParallelism: false,
     sequence: {
