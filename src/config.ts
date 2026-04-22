@@ -45,6 +45,7 @@ export const config = {
     template: optionalEnv('META_WHATSAPP_TEMPLATE', 'hello_world'),
     serviceTemplate: optionalEnv('META_WHATSAPP_SERVICE_TEMPLATE', 'service_welcome'),
     webhookVerifyToken: optionalEnv('META_WEBHOOK_VERIFY_TOKEN', 'speedtolead_verify_2026'),
+    appSecret: optionalEnv('META_APP_SECRET'),
   },
 
   email: {

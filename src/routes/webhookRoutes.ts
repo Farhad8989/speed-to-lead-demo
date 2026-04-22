@@ -5,6 +5,7 @@ import { getMessagingProvider } from '../messaging/messagingFactory';
 import { processReply, finalize } from '../services/qualificationService';
 import { routeLead } from '../services/routingService';
 import { twilioValidator } from '../middleware/twilioValidator';
+import { metaValidator } from '../middleware/metaValidator';
 import { spamGuard } from '../middleware/spamGuard';
 import { twilioIdempotency } from '../middleware/twilioIdempotency';
 import { ConversationRole, LeadStatus } from '../types';
@@ -29,7 +30,7 @@ router.get('/meta', (req: Request, res: Response) => {
   }
 });
 
-router.post('/meta', async (req: Request, res: Response) => {
+router.post('/meta', metaValidator, async (req: Request, res: Response) => {
   res.sendStatus(200);
 
   try {
