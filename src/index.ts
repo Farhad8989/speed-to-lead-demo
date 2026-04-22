@@ -37,7 +37,16 @@ app.get('/health', (_req, res) => {
   });
 });
 
-app.post('/api/debug/reset', async (_req, res) => {
+function requireDebugSecret(req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) {
+  const secret = config.app.debugSecret;
+  if (secret && req.query.secret !== secret) {
+    res.status(403).json({ ok: false, error: 'Forbidden' });
+    return;
+  }
+  next();
+}
+
+app.post('/api/debug/reset', requireDebugSecret, async (_req, res) => {
   try {
     const { clearTabData } = await import('./sheets/sheetsClient');
     await Promise.all(['Leads', 'Conversations', 'FollowUps', 'Events', 'SalesReps'].map(clearTabData));
@@ -49,7 +58,7 @@ app.post('/api/debug/reset', async (_req, res) => {
   }
 });
 
-app.get('/api/debug/ai', async (_req, res) => {
+app.get('/api/debug/ai', requireDebugSecret, async (_req, res) => {
   try {
     const { getAIProvider } = await import('./ai/aiFactory');
     const ai = getAIProvider();
