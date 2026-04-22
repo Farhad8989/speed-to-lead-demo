@@ -6,7 +6,7 @@ import { processReply, finalize } from '../services/qualificationService';
 import { routeLead } from '../services/routingService';
 import { twilioValidator } from '../middleware/twilioValidator';
 import { spamGuard } from '../middleware/spamGuard';
-import { ConversationRole } from '../types';
+import { ConversationRole, LeadStatus } from '../types';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 
@@ -45,6 +45,11 @@ router.post('/meta', async (req: Request, res: Response) => {
       const lead = await findLeadByPhone(phone);
       if (!lead) {
         logger.warn(`[META WEBHOOK] No lead found for ${phone}`);
+        continue;
+      }
+
+      if (lead.status === LeadStatus.QUALIFIED || lead.status === LeadStatus.LOST) {
+        logger.info(`[META WEBHOOK] Lead ${lead.id} already ${lead.status} — skipping AI`);
         continue;
       }
 
@@ -91,6 +96,8 @@ router.post('/twilio', twilioValidator, spamGuard, async (req: Request, res: Res
       const lead = await findLeadByPhone(phone);
       if (!lead) {
         logger.warn(`[TWILIO WEBHOOK] No lead found for ${phone}`);
+      } else if (lead.status === LeadStatus.QUALIFIED || lead.status === LeadStatus.LOST) {
+        logger.info(`[TWILIO WEBHOOK] Lead ${lead.id} already ${lead.status} — skipping AI`);
       } else {
         const { replyText: aiReply, isComplete, qualificationResult } = await processReply(lead, body);
 
