@@ -115,8 +115,12 @@ router.post('/twilio', twilioValidator, twilioIdempotency, spamGuard, async (req
           replyText = aiReply;
         }
 
-        await insertMessage(lead.id, ConversationRole.ASSISTANT, replyText, 'whatsapp');
-        logger.info(`[TWILIO WEBHOOK] Reply stored for lead ${lead.id}`);
+        if (replyText) {
+          await insertMessage(lead.id, ConversationRole.ASSISTANT, replyText, 'whatsapp');
+          logger.info(`[TWILIO WEBHOOK] Reply stored for lead ${lead.id}`);
+        } else {
+          logger.warn(`[TWILIO WEBHOOK] Empty reply for lead ${lead.id} — not storing`);
+        }
       }
     }
   } catch (err) {
