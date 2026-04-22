@@ -48,9 +48,10 @@ export async function processReply(lead: Lead, userMessage: string): Promise<Pro
   await insertMessage(lead.id, ConversationRole.USER, userMessage, 'whatsapp');
 
   const history = await getConversationByLeadId(lead.id);
+  const recentHistory = history.slice(-20);
   const chatMessages: ChatMessage[] = [
     buildSystemMessage(lead),
-    ...history.map(m => ({
+    ...recentHistory.map(m => ({
       role: m.role === ConversationRole.USER ? 'user' as const : 'assistant' as const,
       content: m.content,
     })),
